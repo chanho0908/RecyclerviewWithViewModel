@@ -85,7 +85,6 @@ class MenuRvAdapter(
         }
     }
 
-    fun getRvListData() = menuList
 }
 
 

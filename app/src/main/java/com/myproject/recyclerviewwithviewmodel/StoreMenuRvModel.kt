@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 
 data class StoreMenuRvModel (
     var imgBitmap: Bitmap? = null,
-    var productName: String,
-    var productQuantity : Int,
-    var productIntro: String,
+    var productName: String? = null,
+    var productQuantity : Int? = null,
+    var productIntro: String? = null,
 )
