@@ -24,12 +24,11 @@ import java.io.InputStream
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: StoreMenuManagementViewModel by viewModels()
-
     private lateinit var launcherForPermission: ActivityResultLauncher<Array<String>>
     private lateinit var launcherForActivity: ActivityResultLauncher<Intent>
-    private var selectedItemPosition: Int? = null
     private lateinit var menuAdapter: MenuRvAdapter
-
+    private var selectedItemPosition: Int? = null
+    private var updateSize: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +44,8 @@ class MainActivity : AppCompatActivity() {
 
             addBtn.setOnClickListener {
                 viewModel.addMenuItem()
+                updateSize?.let { updateSize -> menuAdapter.notifyItemInserted(updateSize) }
+
             }
 
             upBtn.setOnClickListener{
@@ -87,12 +88,16 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.menuList.collect { menuData ->
+                    updateSize = menuData.size
+
                     menuAdapter = MenuRvAdapter(
                         menuData,
                         { position ->
                             if (hasImagePermission()) {
                                 accessGallery(launcherForActivity)
-                            } else launcherForPermission.launch(REQUEST_IMAGE_PERMISSIONS)
+                            } else{
+                                launcherForPermission.launch(REQUEST_IMAGE_PERMISSIONS)
+                            }
                             selectedItemPosition = position
                         }
                     ) { position ->

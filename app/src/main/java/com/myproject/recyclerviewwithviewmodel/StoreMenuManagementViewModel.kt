@@ -15,13 +15,9 @@ class StoreMenuManagementViewModel: ViewModel() {
     }
 
     fun addMenuItem() {
-        Log.d("CurrentMenRvAdapter", "addMenuItem()")
         // 새로운 항목 생성
         val newItem = StoreMenuRvModel()
         _menuList.value.add(newItem)
-
-        Log.d("CurrentMenRvAdapter", "Current MenuList : ${menuList.value.size}")
-
     }
 
     fun deleteMenuItem(pos: Int) {
