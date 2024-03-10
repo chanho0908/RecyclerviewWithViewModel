@@ -1,4 +1,4 @@
-package com.myproject.recyclerviewwithviewmodel
+package com.myproject.recyclerviewwithviewmodel.util
 
 import android.content.Context
 import android.content.Intent
@@ -10,6 +10,11 @@ import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 fun Context.hasPermission(permission: String): Boolean {
     return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
@@ -31,3 +36,16 @@ fun Context.showPermissionSnackBar(view: View) {
     }.show()
 }
 
+
+fun Context.showSoftInput(focusView: TextInputEditText) {
+    val inputMethodManager = this@showSoftInput.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE)
+            as InputMethodManager
+    inputMethodManager.showSoftInput(focusView, 0)
+}
+
+fun Context.hideSoftInput(focusView: TextInputEditText) {
+    val inputMethodManager = this@hideSoftInput.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE)
+            as InputMethodManager
+    inputMethodManager.hideSoftInputFromWindow(focusView.windowToken, 0)
+
+}

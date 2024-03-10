@@ -1,4 +1,4 @@
-package com.myproject.recyclerviewwithviewmodel
+package com.myproject.recyclerviewwithviewmodel.ViewModelWithStateFlow
 
 import android.content.Intent
 import android.graphics.Bitmap
@@ -14,21 +14,38 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.myproject.recyclerviewwithviewmodel.Utils.REQUEST_IMAGE_PERMISSIONS
-import com.myproject.recyclerviewwithviewmodel.Utils.accessGallery
+import com.myproject.recyclerviewwithviewmodel.R
 import com.myproject.recyclerviewwithviewmodel.databinding.ActivityMainBinding
-import kotlinx.coroutines.flow.collect
+import com.myproject.recyclerviewwithviewmodel.rv.MenuRvAdapter
+import com.myproject.recyclerviewwithviewmodel.util.Utils.REQUEST_IMAGE_PERMISSIONS
+import com.myproject.recyclerviewwithviewmodel.util.Utils.accessGallery
+import com.myproject.recyclerviewwithviewmodel.util.hasImagePermission
+import com.myproject.recyclerviewwithviewmodel.util.showPermissionSnackBar
 import kotlinx.coroutines.launch
 import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: StoreMenuManagementViewModel by viewModels()
+    private val viewModel: StateFlowViewModel by viewModels()
     private lateinit var launcherForPermission: ActivityResultLauncher<Array<String>>
     private lateinit var launcherForActivity: ActivityResultLauncher<Intent>
-    private lateinit var menuAdapter: MenuRvAdapter
     private var selectedItemPosition: Int? = null
-    private var updateSize: Int? = null
+
+    private val menuAdapter by lazy {
+        MenuRvAdapter(
+            imgClickListener = { position ->
+                if (hasImagePermission()) {
+                    accessGallery(launcherForActivity)
+                } else {
+                    launcherForPermission.launch(REQUEST_IMAGE_PERMISSIONS)
+                }
+                selectedItemPosition = position
+            },
+            delButtonClickListener = { position ->
+                viewModel.deleteMenuItem(position)
+            }
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,8 +61,7 @@ class MainActivity : AppCompatActivity() {
 
             addBtn.setOnClickListener {
                 viewModel.addMenuItem()
-                updateSize?.let { updateSize -> menuAdapter.notifyItemInserted(updateSize) }
-
+                rv.scrollToPosition(viewModel.menuList.size-1)
             }
 
             upBtn.setOnClickListener{
@@ -62,18 +78,18 @@ class MainActivity : AppCompatActivity() {
 
                             lifecycleScope.launch {
                                 repeatOnLifecycle(Lifecycle.State.STARTED){
-                                    viewModel.menuList.collect{ menuData ->
-                                        menuData.forEachIndexed { index, menu ->
-                                            if (menu.productName == null || menu.productQuantity == 0){
-                                                // 입력되지 않은 값이 있으면 해당 항목에 포커스
-                                                binding.rv.scrollToPosition(index)
-
-                                                // 특정 위치에 대한 ViewHolder를 검색
-                                                binding.rv.findViewHolderForAdapterPosition(index)?.itemView?.requestFocus()
-                                                return@forEachIndexed
-                                            }
-                                        }
-                                    }
+//                                    viewModel.menuList.collect{ menuData ->
+//                                        menuData.forEachIndexed { index, menu ->
+//                                            if (menu.productName == null || menu.productQuantity == 0){
+//                                                // 입력되지 않은 값이 있으면 해당 항목에 포커스
+//                                                binding.rv.scrollToPosition(index)
+//
+//                                                // 특정 위치에 대한 ViewHolder를 검색
+//                                                binding.rv.findViewHolderForAdapterPosition(index)?.itemView?.requestFocus()
+//                                                return@forEachIndexed
+//                                            }
+//                                        }
+//                                    }
                                 }
                             }
                         }
@@ -85,34 +101,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initRv(){
+        with(binding.rv) {
+            adapter = menuAdapter
+            layoutManager = LinearLayoutManager(this@MainActivity)
+        }
+
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.menuList.collect { menuData ->
-                    updateSize = menuData.size
-
-                    menuAdapter = MenuRvAdapter(
-                        menuData,
-                        { position ->
-                            if (hasImagePermission()) {
-                                accessGallery(launcherForActivity)
-                            } else{
-                                launcherForPermission.launch(REQUEST_IMAGE_PERMISSIONS)
-                            }
-                            selectedItemPosition = position
-                        }
-                    ) { position ->
-                        Log.d("CurrentMenRvAdapter", "delete Pos : $position")
-                        Log.d(
-                            "CurrentMenRvAdapter",
-                            "delete target : ${menuData[position].productName}"
-                        )
-                        viewModel.deleteMenuItem(position)
-                    }
-
-                    with(binding.rv) {
-                        adapter = menuAdapter
-                        layoutManager = LinearLayoutManager(this@MainActivity)
-                    }
+                viewModel.menuCount.collect { _ -> // 값이 변경됐을 때
+                    menuAdapter.menuList = viewModel.menuList
+                    menuAdapter.notifyDataSetChanged() // 리스트 값이 변경되었으니 확인해라. 라고 리사이클러뷰 어댑터에 알려줌
                 }
             }
         }

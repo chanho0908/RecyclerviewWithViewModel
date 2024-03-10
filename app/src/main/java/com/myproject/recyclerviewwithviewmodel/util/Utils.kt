@@ -1,4 +1,4 @@
-package com.myproject.recyclerviewwithviewmodel
+package com.myproject.recyclerviewwithviewmodel.util
 
 import android.Manifest
 import android.content.Intent
